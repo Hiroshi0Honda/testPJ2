@@ -1,0 +1,343 @@
+# プロンプト記録
+
+## 2024年12月19日
+
+### ユーザーの要求
+.cursor/rules/requirements.mdcを参照し、Must-have Conditionの機能を作成してください。
+requirements.mdcは常に参照し、指示は順守してください。
+指示にも記載していますが、このプロンプトのやり取りはprompt/prompt.txtに記録してください。
+
+### AIの回答
+プロジェクトの要件を確認し、Must-have Conditionの機能を実装いたします。
+要件に従って以下の機能を実装します：
+
+1. データ取得機能
+2. 特徴量データ作成機能
+3. 学習データと検証データへの分割機能
+4. 機械学習機能（Transformer）
+5. 検証と結果の表示・出力機能
+
+クリーンアーキテクチャに従い、レイヤードアーキテクチャで実装します。
+
+### 実装完了内容
+
+#### 1. プロジェクト構造の作成
+- `requirements.txt`: 依存関係の定義
+- `src/`: ソースコードディレクトリ
+- `tests/`: テストディレクトリ
+- `main.py`: メイン実行ファイル
+- `README.md`: プロジェクトドキュメント
+
+#### 2. ドメイン層（src/domain/）
+- `entities.py`: ドメインエンティティ（RaceInfo, HorseRaceInfo, PreviousRaceInfo, FeatureData, PredictionResult）
+- `repositories.py`: リポジトリインターフェース
+- `services.py`: ドメインサービスインターフェース
+
+#### 3. インフラストラクチャ層（src/infrastructure/）
+- `database.py`: PostgreSQLデータベースアクセス実装
+- `storage.py`: モデル保存・読み込みとCSV出力実装
+- `dependency_injection.py`: 依存性注入コンテナ
+
+#### 4. アプリケーション層（src/application/）
+- `services.py`: アプリケーションサービス実装
+  - FeatureEngineeringServiceImpl: 特徴量エンジニアリング
+  - DataSplitServiceImpl: データ分割
+  - ModelTrainingServiceImpl: Transformerモデル学習
+  - EvaluationServiceImpl: 評価指標計算
+- `usecases.py`: メインユースケース（HorseRacingAnalysisUseCase）
+
+#### 5. テスト（tests/）
+- `test_entities.py`: エンティティの単体テスト
+- `test_services.py`: サービスの単体テスト（モック使用）
+
+#### 6. 主要機能の実装
+- **データ取得**: PostgreSQLからレース情報、馬ごとレース情報、前走ID情報を取得
+- **特徴量作成**: 複雑な特徴量構造（レース情報 + 馬の情報 + 前走情報）
+- **データ分割**: race_id単位で80%学習、20%検証に分割
+- **機械学習**: Transformerアーキテクチャ、Positional Encoding
+- **評価・出力**: 予測精度、相関分析、CSV出力
+
+#### 7. アーキテクチャの特徴
+- クリーンアーキテクチャ（レイヤードアーキテクチャ）
+- 依存性注入による疎結合
+- 単一責任の原則
+- 型ヒントとSphinx形式Docstring
+- 包括的なログ機能
+
+#### 8. コーディング規約準拠
+- PEP 8準拠
+- snake_case（変数・関数）、PascalCase（クラス）
+- 型ヒントの積極的使用
+- 適切なログレベル設定
+
+#### 9. テスト戦略
+- pytestによる単体テスト
+- unittest.mockによる外部依存の排除
+- エンティティとサービスのテストカバレッジ
+
+### 実装されたMust-have Condition
+1. ✅ データ取得（PostgreSQL、指定SQLファイル使用）
+2. ✅ 特徴量データ作成（複雑な構造、欠損補完）
+3. ✅ 学習・検証データ分割（80%:20%）
+4. ✅ 機械学習（Transformer、Positional Encoding）
+5. ✅ 検証・結果出力（精度、相関、CSV出力）
+
+### 実行方法
+```bash
+# 依存関係インストール
+pip install -r requirements.txt
+
+# メイン実行
+python main.py
+
+# テスト実行
+pytest tests/ -v
+```
+
+### 注意事項
+- db/フォルダ内のファイルは変更不可（要件通り）
+- データベース接続設定が必要
+- 大量データ処理時のメモリ使用量に注意
+
+### トラブルシューティング
+
+#### 文字エンコーディング問題の解決
+**問題**: requirements.txtファイルでUnicodeDecodeErrorが発生
+```
+UnicodeDecodeError: 'cp932' codec can't decode byte 0x87 in position 10: illegal multibyte sequence
+```
+
+**原因**: Windows環境でcp932（Shift_JIS）エンコーディングでUTF-8ファイルを読み込もうとした
+
+**解決策**: 
+1. requirements.txtファイルを削除
+2. 英語コメントで再作成（UTF-8エンコーディング）
+3. 日本語コメントを英語に変更してエンコーディング問題を回避
+
+**修正内容**:
+- 日本語コメントを英語コメントに変更
+- UTF-8エンコーディングでファイル保存
+- Windows環境での互換性を確保
+
+#### インポートエラーの解決
+**問題**: DatabaseConnectorクラスのインポートエラー
+```
+ImportError: cannot import name 'DatabaseConnector' from 'db.connector'
+```
+
+**原因**: db/connector.pyファイルにはDatabaseConnectorクラスが存在せず、関数ベースの実装だった
+
+**解決策**:
+1. db/connector.pyの実際の実装を確認
+2. DatabaseConnectorクラスをラッパークラスとして作成
+3. 実際の関数（get_connection）を使用するように修正
+
+**修正内容**:
+- `src/infrastructure/dependency_injection.py`: DatabaseConnectorラッパークラスを追加
+- `src/infrastructure/database.py`: get_connection関数を直接使用するように修正
+- 実際のdb.connectorの実装に合わせた修正
+
+#### sklearn.metricsインポートエラーの解決
+**問題**: sklearn.metricsからcorrelation関数のインポートエラー
+```
+ImportError: cannot import name 'correlation' from 'sklearn.metrics'
+```
+
+**原因**: sklearn.metricsにはcorrelation関数が存在しない
+
+**解決策**:
+1. sklearn.metricsからcorrelationのインポートを削除
+2. numpy.corrcoefを使用して相関を計算
+3. 実際に使用されていないaccuracy_scoreも確認
+
+**修正内容**:
+- `src/application/services.py`: sklearn.metricsからcorrelationを削除
+- numpy.corrcoefを使用した相関計算を維持
+- 不要なインポートを削除してエラーを解決
+
+#### ModelTrainingServiceImplインポートエラーの解決
+**問題**: ModelTrainingServiceImplクラスのNameError
+```
+NameError: name 'ModelTrainingServiceImpl' is not defined. Did you mean: 'ModelTrainingService'?
+```
+
+**原因**: usecases.pyファイルでModelTrainingServiceImplクラスがインポートされていなかった
+
+**解決策**:
+1. src.application.servicesからModelTrainingServiceImplをインポート
+2. 正しいクラス名でインポートを追加
+
+**修正内容**:
+- `src/application/usecases.py`: ModelTrainingServiceImplのインポートを追加
+- 正しいクラス名でのインポートを実装
+- 依存関係の明確化
+
+## トラブルシューティング記録
+
+### 2025年1月21日 - TransformerモデルのPositional Encoding次元エラー修正
+
+**問題:**
+```
+ValueError: Cannot broadcast shape, the failure dim has value 169, which cannot be broadcasted to 1024. Input shapes are: [None, 169] and [169, 1024].
+```
+
+**原因:**
+- Positional Encodingの次元が入力データの次元と一致していなかった
+- `_positional_encoding`メソッドで固定値`depth=512`を使用していたが、実際の入力データは169次元
+
+**修正内容:**
+1. `src/application/services.py`の`_build_transformer_model`メソッドを修正
+2. 入力データをまず512次元のDense層で変換
+3. Reshapeでシーケンス形式に変換
+4. Positional Encodingを適切な次元（1, 512）で適用
+5. `_positional_encoding`メソッドのデフォルト引数を削除
+
+**修正後の構造:**
+- 入力層: (feature_size,) → Dense(512) → Reshape((1, 512)) → Positional Encoding → Transformer層
+
+**結果:**
+- 次元の不一致エラーが解決され、Transformerモデルが正常に構築されるようになった
+
+### 2025年1月21日 - Positional Encoding次元計算の追加修正
+
+**問題:**
+```
+ValueError: Cannot broadcast shape, the failure dim has value 512, which cannot be broadcasted to 1024. Input shapes are: [None, 1, 512] and [1, 1024].
+```
+
+**原因:**
+- `_positional_encoding`メソッドで`depth=512`を指定しても、`np.concatenate`でsinとcosを結合するため実際の次元が1024になっていた
+- 指定したdepthと実際の出力次元が一致していなかった
+
+**修正内容:**
+1. `_positional_encoding`メソッドの`depths`計算を修正
+2. `np.arange(depth // 2)`を使用して、sinとcosの結合後も指定したdepthに一致するように調整
+3. `depths`の正規化も`(depth // 2)`で調整
+
+**結果:**
+- Positional Encodingの次元が指定したdepth（512）に正確に一致するようになった
+- Transformerモデルの構築エラーが完全に解決された
+
+### 2025年1月21日 - 損失関数とモデル出力の修正
+
+**問題:**
+```
+ValueError: Argument `output` must have rank (ndim) `target.ndim - 1`. Received: target.shape=(None, 18), output.shape=(None, 18)
+```
+
+**原因:**
+- `sparse_categorical_crossentropy`損失関数が、ターゲットの形状と出力の形状の不一致でエラー
+- 現在の実装では各馬の勝率予測（2クラス分類）なのに、多クラス分類の損失関数を使用していた
+- データ準備で各馬の特徴量を個別に作成する必要があった
+
+**修正内容:**
+1. `_prepare_data`メソッドを修正
+   - 各馬の特徴量を個別に作成するように変更
+   - ラベルも各馬に対して個別に作成（1着=1、それ以外=0）
+
+2. `_extract_horse_features`メソッドを新規作成
+   - 特定の馬の特徴量を抽出する専用メソッド
+   - レース情報7次元 + 馬の情報9次元 = 16次元
+
+3. モデル出力層を修正
+   - `Dense(self.max_horses, activation='softmax')` → `Dense(1, activation='sigmoid')`
+   - 2クラス分類（勝つ/負ける）に変更
+
+4. 損失関数を修正
+   - `sparse_categorical_crossentropy` → `binary_crossentropy`
+   - 2クラス分類に適した損失関数に変更
+
+5. `feature_size`を固定値16に変更
+   - レース情報7 + 馬の情報9 = 16次元
+
+6. `predict_win_probabilities`メソッドを修正
+   - 各馬の勝率を個別に予測するように変更
+
+**結果:**
+- 損失関数とモデル出力の形状が一致するようになった
+- 各馬の勝率予測が正しく動作するようになった
+
+### 2025年1月21日 - モデル保存エラーの修正
+
+**問題:**
+```
+ValueError: The filename must end in `.weights.h5`. Received: filepath=models\horse_racing_model.keras
+```
+
+**原因:**
+- `save_weights`メソッドが`.weights.h5`で終わるファイル名を要求している
+- 現在は`.keras`拡張子のファイル名を使用している
+- `save_weights`は重みのみを保存するメソッドで、ファイル名の制約がある
+
+**修正内容:**
+1. `src/infrastructure/storage.py`の`save_model`メソッドを修正
+2. `model.save_weights(filepath)` → `model.save(filepath)`に変更
+3. `save`メソッドはモデル全体（アーキテクチャと重み）を保存し、`.keras`拡張子に対応
+
+**結果:**
+- モデル保存エラーが解決され、`.keras`拡張子での保存が正常に動作するようになった
+- モデル全体（アーキテクチャと重み）が保存されるため、後で完全に復元可能
+
+### 2025年1月21日 - 予測勝率の標準化修正
+
+**要求:**
+- 予測勝率は1レースの出走馬合計で1になるように標準化
+
+**問題:**
+- 現在の実装では各馬の勝率を個別に予測しているため、1レース内での合計が1にならない
+- 各馬の予測値は独立したsigmoid出力のため、確率分布として適切でない
+
+**修正内容:**
+1. `predict_win_probabilities`メソッドを修正
+2. 各レース内で予測勝率をsoftmax正規化
+3. 数値の安定性のため、最大値を引いてから指数計算
+4. 1レース内の出走馬の予測勝率合計が1になるように標準化
+
+**実装詳細:**
+- 各レースの予測値を一時的に`race_probabilities`に格納
+- softmax正規化: `exp(prob - max_prob) / sum(exp_probs)`
+- 正規化後の値を`probabilities`リストに追加
+
+**結果:**
+- 1レース内の出走馬の予測勝率合計が1になる
+- より現実的な確率分布として扱える
+- 馬券戦略の評価に適した形式になった
+
+### 2025年1月22日 - 予測ロジックのバグ修正
+
+**問題:**
+- `prediction_results.csv` の予測勝率が、レース内で合計1に正規化されていなかった
+- `ModelTrainingServiceImpl` で実装した正規化ロジックが、最終的な出力に反映されていなかった
+
+**原因:**
+- `src/application/usecases.py` の `_predict_validation_data` メソッド内で、実際のモデル予測を行わず、`random.random()` を使ったダミーの予測値を生成していた。
+- これにより、`ModelTrainingServiceImpl` の `predict_win_probabilities` メソッドが呼び出されず、正規化処理も実行されていなかった。
+
+**修正内容:**
+1. `_predict_validation_data` メソッドを全面的に書き換え
+2. `self.model_training_service.predict_win_probabilities(model, validation_data)` を呼び出し、モデルによる正規化済みの予測勝率を取得
+3. 取得した予測勝率を、`PredictionResult` オブジェクトに正しく割り当て
+4. レースごとに予測勝率でソートし、`predicted_rank`（予測順位）を設定
+
+**結果:**
+- モデルの実際の予測値と正規化処理が正しく使われるようになった
+- `prediction_results.csv` に出力される予測勝率は、各レース内で合計が1になるように正しく正規化されるようになった
+
+### 2025年1月22日 - データリークの修正
+
+**問題:**
+- ユーザーからの指摘により、特徴量設計に重大なデータリーク（情報漏洩）が発覚。
+- `race_order`（着順）など、レース結果の情報を、そのレース自体の予測に使用してしまっていた。
+
+**原因:**
+- `src/application/services.py` の `_extract_horse_features` メソッドが、予測時には利用不可能な `race_order` を特徴量に含めていた。
+- これにより、モデルは学習時に「答え」を知ってしまい、現実の予測では機能しない状態だった。
+
+**修正内容:**
+1. `_extract_horse_features` メソッドから `target_horse.race_order` を削除。
+2. 上記の修正に伴い、`ModelTrainingServiceImpl` の `__init__` メソッドでハードコードされていた `feature_size` を `16` から `15` に修正。（レース情報7次元 + 馬情報8次元）
+3. 同様に、`_extract_basic_features` メソッド内のゼロ埋め処理の次元数も `15` に修正。
+
+**結果:**
+- 重大なデータリークが解消され、モデルが未知のデータに対して正しく予測を試みるようになった。
+- より実践的で信頼性の高いモデルを構築するための、正しい特徴量設計となった。
